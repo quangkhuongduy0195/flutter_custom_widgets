@@ -17,60 +17,72 @@ class MyProccessView extends GetView<MyProccessController> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 200,
-              height: 200,
-              padding: EdgeInsets.all(10),
-              child: SpeedIndicator(
-                minSpeed: 0,
-                maxSpeed: 500,
-                speed: 185,
-                animate: true,
-                speedWidth: 16,
-                inactiveColor: Colors.black12,
-                activeColor: Colors.black,
-                unitOfMeasurement: 'gallons',
-                fractionDigits: 0,
-                speedTextStyle: TextStyle(
-                  color: Colors.black,
-                  fontSize: 46,
-                  fontWeight: FontWeight.w600,
+            Obx(
+              () => Container(
+                width: 200,
+                height: 200,
+                padding: EdgeInsets.all(10),
+                child: SpeedIndicator(
+                  minSpeed: 0,
+                  maxSpeed: 500,
+                  speed: controller.count.value,
+                  animate: true,
+                  speedWidth: 16,
+                  inactiveColor: Colors.black12,
+                  activeColor: Colors.black,
+                  unitOfMeasurement: 'gallons',
+                  fractionDigits: 0,
+                  speedTextStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 46,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unitOfMeasurementTextStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  duration: Duration(milliseconds: 200),
                 ),
-                unitOfMeasurementTextStyle: TextStyle(
-                  color: Colors.black,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w400,
-                ),
-                duration: Duration(milliseconds: 200),
               ),
             ),
-            Container(
-              width: 200,
-              height: 200,
-              padding: EdgeInsets.all(10),
-              child: SpeedIndicatorLine(
-                minSpeed: 0,
-                maxSpeed: 500,
-                speed: 100,
-                animate: true,
-                speedWidth: 16,
-                inactiveColor: Colors.black12,
-                activeColor: Colors.black,
-                unitOfMeasurement: 'gallons',
-                fractionDigits: 0,
-                speedTextStyle: TextStyle(
-                  color: Colors.black,
-                  fontSize: 46,
-                  fontWeight: FontWeight.w600,
+            Obx(
+              () => Container(
+                width: 350,
+                height: 350,
+                padding: EdgeInsets.all(10),
+                child: SpeedIndicatorLine(
+                  minSpeed: 0,
+                  maxSpeed: 140,
+                  heightLine: 90,
+                  speed: controller.count.value,
+                  animate: true,
+                  inactiveColor: Colors.black12,
+                  activeColor: Colors.black,
+                  unitOfMeasurement: 'Cool set to',
+                  fractionDigits: 0,
+                  speedTextStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 60,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unitOfMeasurementTextStyle: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  duration: Duration(milliseconds: 200),
+                  tapLeft: () {
+                    print('---------');
+                    controller.count.value = controller.count.value - 1;
+                  },
+                  tapRight: () {
+                    print('++++++++++++++++++++++');
+                    controller.count.value = controller.count.value + 1;
+                  },
                 ),
-                unitOfMeasurementTextStyle: TextStyle(
-                  color: Colors.black,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w400,
-                ),
-                duration: Duration(milliseconds: 200),
               ),
-            )
+            ),
           ],
         ),
       ),

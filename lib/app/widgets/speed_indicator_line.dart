@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:touchable/touchable.dart';
 
 class SpeedIndicatorLine extends StatefulWidget {
+  final Function? tapLeft;
+  final Function? tapRight;
   final double speed;
   final TextStyle speedTextStyle;
 
@@ -20,6 +23,7 @@ class SpeedIndicatorLine extends StatefulWidget {
   final bool animate;
   final Duration duration;
   final int fractionDigits;
+  final double heightLine;
 
   final Widget? child;
 
@@ -46,6 +50,9 @@ class SpeedIndicatorLine extends StatefulWidget {
     this.duration = const Duration(milliseconds: 400),
     this.fractionDigits = 0,
     this.child,
+    this.heightLine = 100,
+    this.tapLeft,
+    this.tapRight,
   }) : super(key: key);
   @override
   SpeedIndicatorLineState createState() =>
@@ -59,41 +66,58 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
 
   double _speed;
   bool _animate;
-
-  double lastMarkSpeed = 0;
-  double _gaugeMarkSpeed = 0;
+  //
+  // double lastMarkSpeed = 0;
+  // double _gaugeMarkSpeed = 0;
 
   SpeedIndicatorLineState(this._speed, this._animate);
 
+  double _current = 0.0;
+
   @override
   void initState() {
-    if (_animate) {
-      WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
-        updateSpeed(_speed, animate: _animate);
-      });
-    } else {
-      lastMarkSpeed = _speed;
-      _gaugeMarkSpeed = _speed;
-    }
-
-    _controller = AnimationController(
-      duration: widget.duration,
-      vsync: this,
-    );
-    _animation = Tween(begin: 0.0, end: 1.0).animate(_controller)
-      ..addListener(() {
-        setState(() {
-          _gaugeMarkSpeed =
-              lastMarkSpeed + (_speed - lastMarkSpeed) * _animation.value;
-        });
-      })
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          lastMarkSpeed = _gaugeMarkSpeed;
-        }
-      });
-
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    _animation = Tween(begin: 0.0, end: widget.speed).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeIn,
+      ),
+    )..addListener(() {
+        setState(() {
+          _current = _animation.value;
+        });
+      });
+
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(SpeedIndicatorLine oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.speed != widget.speed) {
+      if (_controller != null) {
+        _animation = Tween(
+          begin: oldWidget.speed,
+          end: widget.speed,
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeIn,
+          ),
+        );
+        _controller.forward(from: 0.0);
+      } else {
+        _updateProgress();
+      }
+    }
+  }
+
+  _updateProgress() {
+    setState(() => _current = widget.speed);
   }
 
   @override
@@ -104,20 +128,27 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _SpeedIndicatorCustomPainter(
-        _gaugeMarkSpeed,
-        widget.speedTextStyle,
-        widget.unitOfMeasurement,
-        widget.unitOfMeasurementTextStyle,
-        widget.minSpeed,
-        widget.maxSpeed,
-        widget.activeColor,
-        widget.speedWidth,
-        widget.inactiveColor,
-        widget.fractionDigits,
+    return CanvasTouchDetector(
+      builder: (context) => CustomPaint(
+        willChange: true,
+        painter: _SpeedIndicatorCustomPainter(
+          _current,
+          widget.speedTextStyle,
+          widget.unitOfMeasurement,
+          widget.unitOfMeasurementTextStyle,
+          widget.minSpeed,
+          widget.maxSpeed,
+          widget.activeColor,
+          widget.speedWidth,
+          widget.inactiveColor,
+          widget.fractionDigits,
+          context,
+          widget.heightLine,
+          widget.tapLeft,
+          widget.tapRight,
+        ),
+        child: widget.child ?? Container(),
       ),
-      child: widget.child ?? Container(),
     );
   }
 
@@ -129,7 +160,7 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
       _controller.forward();
     } else {
       setState(() {
-        lastMarkSpeed = speed;
+        _current = speed;
       });
     }
   }
@@ -137,8 +168,13 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
 
 class _SpeedIndicatorCustomPainter extends CustomPainter {
   //We are considering this start angle starting point for gauge view
-  final double arcStartAngle = 135;
-  final double arcSweepAngle = 270;
+  final double arcStartAngle = 125;
+  final double arcSweepAngle = 290;
+  final double heightLine;
+  final Function? tapLeft;
+  final Function? tapRight;
+
+  final BuildContext context;
 
   final double speed;
   final TextStyle speedTextStyle;
@@ -169,46 +205,238 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
     this.speedWidth,
     this.inactiveColor,
     this.fractionDigits,
+    this.context,
+    this.heightLine,
+    this.tapLeft,
+    this.tapRight,
   );
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(Canvas _canvas, Size size) {
+    var canvas = TouchyCanvas(context, _canvas);
     //get the center of the view
     center = size.center(Offset(0, 0));
 
     double minDimension = size.width > size.height ? size.height : size.width;
     mRadius = minDimension / 2;
 
-    Paint paint = Paint();
-    paint.color = Colors.red;
-    paint.strokeWidth = speedWidth;
-    paint.strokeCap = StrokeCap.round;
-    paint.style = PaintingStyle.stroke;
+    final w = size.width;
+    final h = size.height;
+    Paint paint1 = Paint()..style = PaintingStyle.stroke;
 
-    //Draw inactive gauge view
-    canvas.drawArc(
-        Rect.fromCircle(center: center!, radius: mRadius),
-        degToRad(arcStartAngle) as double,
-        degToRad(arcSweepAngle) as double,
-        false,
-        paint..color = inactiveColor);
-
-    paint.color = activeColor;
-
-    canvas.drawArc(
-        Rect.fromCircle(center: center!, radius: mRadius),
-        degToRad(arcStartAngle) as double,
-        degToRad(_getAngleOfSpeed(speed)) as double,
-        false,
-        paint);
-
-    //Going to draw division, Subdivision and Alert Circle
-    paint.style = PaintingStyle.fill;
+    final rect = Rect.fromCenter(
+      center: Offset(w / 2, h / 2),
+      height: h - maxDefinedSize,
+      width: w - maxDefinedSize,
+    );
 
     //Draw Unit of Measurement
-    _drawUnitOfMeasurementText(canvas, size);
+    _drawUnitOfMeasurementText(_canvas, size);
 
     //Draw Speed Text
-    _drawSpeedText(canvas, size);
+    _drawSpeedText(_canvas, size);
+
+    _drawIconDown(size, _canvas);
+    _drawIconUp(size, _canvas);
+
+    _drawStepArc(canvas, paint1, rect, size);
+
+    _drawButtonLeft(canvas, paint1, rect, size);
+    _drawButtonRight(canvas, paint1, rect, size);
+  }
+
+  void _drawIconUp(Size size, Canvas canvas) {
+    final icon = Icons.keyboard_arrow_up;
+    TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        color: Colors.black,
+        fontSize: heightLine / 2,
+        fontFamily: icon.fontFamily,
+        fontWeight: FontWeight.w400,
+        package:
+            icon.fontPackage, // This line is mandatory for external icon packs
+      ),
+    );
+    textPainter.layout();
+
+    var rectIcon = Offset(
+        center!.dx + size.width * 0.06, center!.dy * 1.96 - heightLine / 2);
+
+    textPainter.paint(canvas, rectIcon);
+  }
+
+  void _drawIconDown(Size size, Canvas canvas) {
+    final icon = Icons.keyboard_arrow_down; //keyboard_arrow_up
+    TextPainter textPainter = TextPainter(textDirection: TextDirection.ltr);
+    textPainter.text = TextSpan(
+      text: String.fromCharCode(icon.codePoint),
+      style: TextStyle(
+        color: Colors.black,
+        fontSize: heightLine / 2,
+        fontFamily: icon.fontFamily,
+        fontWeight: FontWeight.w400,
+        package:
+            icon.fontPackage, // This line is mandatory for external icon packs
+      ),
+    );
+    textPainter.layout();
+
+    var rectIcon = Offset(
+        center!.dx - size.width * 0.2, center!.dy * 1.96 - heightLine / 2);
+
+    textPainter.paint(canvas, rectIcon);
+  }
+
+  void _drawStepArc(
+    TouchyCanvas canvas,
+    Paint paint,
+    Rect rect,
+    Size size,
+  ) {
+    var centerX = rect.center.dx;
+    var centerY = rect.center.dy;
+    var radius = math.min(centerX, centerY);
+
+    var draw = (arcSweepAngle + arcStartAngle) / maxSpeed;
+    var stepLine = 2;
+    var step = 0;
+
+    for (double i = arcStartAngle;
+        i <= arcSweepAngle + arcStartAngle;
+        i += stepLine) {
+      step++;
+      var outerCircleRadius = (radius - (i < draw ? 0 : heightLine / 2));
+      var innerCircleRadius = (radius);
+
+      var x1 = centerX + outerCircleRadius * math.cos(degToRad(i));
+      var y1 = centerX + outerCircleRadius * math.sin(degToRad(i));
+      //
+      var x2 = centerX + innerCircleRadius * math.cos(degToRad(i));
+      var y2 = centerX + innerCircleRadius * math.sin(degToRad(i));
+      var dashBrush = paint
+        ..color = Colors.black
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1;
+      canvas.drawLine(Offset(x1, y1), Offset(x2, y2), dashBrush);
+    }
+
+    var ii = arcStartAngle + _getAngleOfSpeed(speed);
+
+    var outerCircleRadius2 = (radius - (heightLine * 0.7));
+    var innerCircleRadius2 = (radius);
+    var x1Current = centerX + outerCircleRadius2 * math.cos(degToRad(ii));
+    var y1Current = centerX + outerCircleRadius2 * math.sin(degToRad(ii));
+    //
+    var x2Current = centerX + innerCircleRadius2 * math.cos(degToRad(ii));
+    var y2Current = centerX + innerCircleRadius2 * math.sin(degToRad(ii));
+    var dashBrush2 = paint
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt
+      ..strokeWidth = 5;
+    canvas.drawLine(
+        Offset(x1Current, y1Current), Offset(x2Current, y2Current), dashBrush2);
+
+    var i = 90;
+    var outerCircleRadius = (radius - (i < draw ? 0 : heightLine / 2));
+    var innerCircleRadius = (radius);
+
+    var x1 = centerX + outerCircleRadius * math.cos(degToRad(i));
+    var y1 = centerX + outerCircleRadius * math.sin(degToRad(i));
+    //
+    var x2 = centerX + innerCircleRadius * math.cos(degToRad(i));
+    var y2 = centerX + innerCircleRadius * math.sin(degToRad(i));
+    var dashBrush = paint
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 1;
+
+    canvas.drawLine(Offset(x1, y1), Offset(x2, y2), dashBrush);
+
+    final paintC = Paint()
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    var startLine = 125;
+    var endLine = -70;
+
+    canvas.drawArc(
+        Rect.fromCircle(center: center!, radius: mRadius),
+        degToRad(startLine) as double,
+        degToRad(endLine) as double,
+        false,
+        paintC);
+
+    canvas.drawArc(
+        Rect.fromCircle(
+            center: Offset(center!.dx, center!.dy),
+            radius: mRadius - heightLine / 2),
+        degToRad(startLine) as double,
+        degToRad(endLine) as double,
+        false,
+        paintC);
+  }
+
+  void _drawButtonLeft(
+    TouchyCanvas canvas,
+    Paint paint,
+    Rect rect,
+    Size size,
+  ) {
+    var startLine = 125;
+    var endLine = -70;
+    paint.strokeWidth = heightLine / 2;
+    paint.strokeCap = StrokeCap.butt;
+    paint.style = PaintingStyle.stroke;
+    paint.color = Colors.transparent;
+    canvas.drawArc(
+      Rect.fromCircle(center: center!, radius: mRadius - heightLine * 0.25),
+      degToRad(startLine) as double,
+      degToRad(endLine / 2) as double,
+      false,
+      paint,
+      onTapDown: (t) {
+        print('tap left --- ');
+        tapLeft?.call();
+      },
+      onTapUp: (t) {
+        print('onTapUp $t');
+        // tapLeft?.call();
+      },
+    );
+  }
+
+  void _drawButtonRight(
+    TouchyCanvas canvas,
+    Paint paint,
+    Rect rect,
+    Size size,
+  ) {
+    var startLine = 125;
+    var endLine = -70;
+    paint.strokeWidth = heightLine / 2;
+    paint.strokeCap = StrokeCap.butt;
+    paint.style = PaintingStyle.stroke;
+    paint.color = Colors.transparent;
+    canvas.drawArc(
+      Rect.fromCircle(center: center!, radius: mRadius - heightLine * 0.25),
+      degToRad(startLine + endLine / 2) as double,
+      degToRad(endLine / 2) as double,
+      false,
+      paint,
+      onTapDown: (t) {
+        print('tap right');
+        tapRight?.call();
+      },
+    );
+  }
+
+  double get maxDefinedSize {
+    return math.max(1, math.max(0, 0));
   }
 
   @override
@@ -226,7 +454,7 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
     //Get the center point of the minSpeed and maxSpeed label
     //that would be center of the unit of measurement text
 
-    Offset unitOfMeasurementOffset = Offset(center!.dx, center!.dy * 1.2);
+    Offset unitOfMeasurementOffset = Offset(center!.dx, center!.dy * 0.65);
 
     TextSpan span = new TextSpan(
         style: unitOfMeasurementTextStyle, text: unitOfMeasurement);
@@ -245,7 +473,7 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
   }
 
   void _drawSpeedText(Canvas canvas, Size size) {
-    Offset? unitOfMeasurementOffset = Offset(center!.dx, center!.dy * 0.7);
+    Offset? unitOfMeasurementOffset = Offset(center!.dx, center!.dy * 1.1);
 
     TextSpan span = new TextSpan(
         style: speedTextStyle, text: speed.toStringAsFixed(fractionDigits));

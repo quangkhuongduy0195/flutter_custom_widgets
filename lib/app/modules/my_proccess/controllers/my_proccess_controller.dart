@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 class MyProccessController extends GetxController {
   //TODO: Implement MyProccessController
 
-  final count = 0.obs;
+  RxDouble count = RxDouble(0);
   @override
   void onInit() {
     super.onInit();
@@ -16,5 +16,4 @@ class MyProccessController extends GetxController {
 
   @override
   void onClose() {}
-  void increment() => count.value++;
 }
