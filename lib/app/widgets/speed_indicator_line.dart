@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:touchable/touchable.dart';
 
 class SpeedIndicatorLine extends StatefulWidget {
   final Function? tapLeft;
@@ -55,8 +54,7 @@ class SpeedIndicatorLine extends StatefulWidget {
     this.tapRight,
   }) : super(key: key);
   @override
-  SpeedIndicatorLineState createState() =>
-      SpeedIndicatorLineState(speed, animate);
+  SpeedIndicatorLineState createState() => SpeedIndicatorLineState();
 }
 
 class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
@@ -64,13 +62,7 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  double _speed;
-  bool _animate;
-  //
-  // double lastMarkSpeed = 0;
-  // double _gaugeMarkSpeed = 0;
-
-  SpeedIndicatorLineState(this._speed, this._animate);
+  SpeedIndicatorLineState();
 
   double _current = 0.0;
 
@@ -128,33 +120,85 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
 
   @override
   Widget build(BuildContext context) {
-    return CanvasTouchDetector(
-      builder: (context) => CustomPaint(
-        willChange: true,
-        painter: _SpeedIndicatorCustomPainter(
-          _current,
-          widget.speedTextStyle,
-          widget.unitOfMeasurement,
-          widget.unitOfMeasurementTextStyle,
-          widget.minSpeed,
-          widget.maxSpeed,
-          widget.activeColor,
-          widget.speedWidth,
-          widget.inactiveColor,
-          widget.fractionDigits,
-          context,
-          widget.heightLine,
-          widget.tapLeft,
-          widget.tapRight,
-        ),
-        child: widget.child ?? Container(),
+    return CustomPaint(
+      willChange: true,
+      painter: _SpeedIndicatorCustomPainter(
+        _current,
+        widget.speedTextStyle,
+        widget.unitOfMeasurement,
+        widget.unitOfMeasurementTextStyle,
+        widget.minSpeed,
+        widget.maxSpeed,
+        widget.activeColor,
+        widget.speedWidth,
+        widget.inactiveColor,
+        widget.fractionDigits,
+        context,
+        widget.heightLine,
+        widget.tapLeft,
+        widget.tapRight,
       ),
+      child: widget.child ??
+          Container(
+            alignment: Alignment.bottomCenter,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: widget.heightLine * 0.75,
+                  width: widget.speedWidth * 0.25,
+                  color: Colors.teal.withOpacity(0.5),
+                  child: GestureDetector(
+                    onTapDown: (i) {
+                      // if (controller.count.value > 0) {
+                      //   controller.count.value =
+                      //       controller.count.value - 1;
+                      // }
+                      widget.tapLeft?.call();
+                    },
+                    onLongPress: () {
+                      // controller.onDown();
+                    },
+                    onLongPressEnd: (detail) {
+                      // print(detail.localPosition);
+                      // controller.onDown(isEnd: true);
+                    },
+                  ),
+                ),
+                Container(
+                  height: widget.heightLine * 0.75,
+                  width: widget.speedWidth * 0.25,
+                  color: Colors.orange.withOpacity(0.5),
+                  child: GestureDetector(
+                    onTap: () {},
+                    onTapDown: (i) {
+                      widget.tapRight?.call();
+                    },
+                    onLongPress: () {
+                      // controller.isUserTouch = true;
+                      // controller.onUp();
+                    },
+                    onLongPressEnd: (detail) {
+                      // controller.onUp(isEnd: true);
+                      // controller.isUserTouch = false;
+                      // controller.onValueToServer();
+                    },
+                    onTapUp: (t) {
+                      // controller.isUserTouch = false;
+                      // print(controller.isUserTouch);
+                      // controller.onValueToServer();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
     );
   }
 
   void updateSpeed(double speed, {bool animate = false, Duration? duration}) {
     if (animate) {
-      this._speed = speed;
       _controller.reset();
       if (duration != null) _controller.duration = duration;
       _controller.forward();
@@ -211,8 +255,7 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
     this.tapRight,
   );
   @override
-  void paint(Canvas _canvas, Size size) {
-    var canvas = TouchyCanvas(context, _canvas);
+  void paint(Canvas canvas, Size size) {
     //get the center of the view
     center = size.center(Offset(0, 0));
 
@@ -230,18 +273,20 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
     );
 
     //Draw Unit of Measurement
-    _drawUnitOfMeasurementText(_canvas, size);
+    _drawUnitOfMeasurementText(canvas, size);
 
     //Draw Speed Text
-    _drawSpeedText(_canvas, size);
+    _drawSpeedText(canvas, size);
 
-    _drawIconDown(size, _canvas);
-    _drawIconUp(size, _canvas);
+    _drawIconDown(size, canvas);
+    _drawIconUp(size, canvas);
 
     _drawStepArc(canvas, paint1, rect, size);
 
     _drawButtonLeft(canvas, paint1, rect, size);
     _drawButtonRight(canvas, paint1, rect, size);
+
+    _drawCurrentStepArc(canvas, paint1, rect, size);
   }
 
   void _drawIconUp(Size size, Canvas canvas) {
@@ -289,7 +334,7 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
   }
 
   void _drawStepArc(
-    TouchyCanvas canvas,
+    Canvas canvas,
     Paint paint,
     Rect rect,
     Size size,
@@ -299,7 +344,7 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
     var radius = math.min(centerX, centerY);
 
     var draw = (arcSweepAngle + arcStartAngle) / maxSpeed;
-    var stepLine = 2;
+    var stepLine = 3;
     var step = 0;
 
     for (double i = arcStartAngle;
@@ -322,22 +367,30 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), dashBrush);
     }
 
-    var ii = arcStartAngle + _getAngleOfSpeed(speed);
-
-    var outerCircleRadius2 = (radius - (heightLine * 0.7));
-    var innerCircleRadius2 = (radius);
-    var x1Current = centerX + outerCircleRadius2 * math.cos(degToRad(ii));
-    var y1Current = centerX + outerCircleRadius2 * math.sin(degToRad(ii));
-    //
-    var x2Current = centerX + innerCircleRadius2 * math.cos(degToRad(ii));
-    var y2Current = centerX + innerCircleRadius2 * math.sin(degToRad(ii));
-    var dashBrush2 = paint
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.butt
-      ..strokeWidth = 5;
     canvas.drawLine(
-        Offset(x1Current, y1Current), Offset(x2Current, y2Current), dashBrush2);
+        Offset(
+            centerX +
+                (radius -
+                        (arcSweepAngle + arcStartAngle < draw
+                            ? 0
+                            : heightLine / 2)) *
+                    math.cos(degToRad(arcSweepAngle + arcStartAngle)),
+            centerX +
+                (radius -
+                        (arcSweepAngle + arcStartAngle < draw
+                            ? 0
+                            : heightLine / 2)) *
+                    math.sin(degToRad(arcSweepAngle + arcStartAngle))),
+        Offset(
+            centerX +
+                radius * math.cos(degToRad(arcSweepAngle + arcStartAngle)),
+            centerX +
+                radius * math.sin(degToRad(arcSweepAngle + arcStartAngle))),
+        paint
+          ..color = Colors.black
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 1);
 
     var i = 90;
     var outerCircleRadius = (radius - (i < draw ? 0 : heightLine / 2));
@@ -381,8 +434,46 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
         paintC);
   }
 
+  void _drawCurrentStepArc(
+    Canvas canvas,
+    Paint paint,
+    Rect rect,
+    Size size,
+  ) {
+    var centerX = rect.center.dx;
+    var centerY = rect.center.dy;
+    var radius = math.min(centerX, centerY);
+
+    var phanTramValue = (((speed - minSpeed) / (maxSpeed - minSpeed))) * 100;
+    var viTriHienThi =
+        (phanTramValue * (arcSweepAngle) + arcStartAngle * 100) / 100;
+
+    if (viTriHienThi > (arcSweepAngle + arcStartAngle)) {
+      viTriHienThi = (arcSweepAngle + arcStartAngle);
+    }
+    if (viTriHienThi < arcStartAngle) {
+      viTriHienThi = arcStartAngle;
+    }
+    var ii = viTriHienThi; //arcStartAngle + _getAngleOfSpeed(speed);
+
+    var outerCircleRadius2 = (radius - (heightLine * 0.7));
+    var innerCircleRadius2 = (radius);
+    var x1Current = centerX + outerCircleRadius2 * math.cos(degToRad(ii));
+    var y1Current = centerX + outerCircleRadius2 * math.sin(degToRad(ii));
+    //
+    var x2Current = centerX + innerCircleRadius2 * math.cos(degToRad(ii));
+    var y2Current = centerX + innerCircleRadius2 * math.sin(degToRad(ii));
+    var dashBrush2 = paint
+      ..color = Colors.black
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt
+      ..strokeWidth = 7;
+    canvas.drawLine(
+        Offset(x1Current, y1Current), Offset(x2Current, y2Current), dashBrush2);
+  }
+
   void _drawButtonLeft(
-    TouchyCanvas canvas,
+    Canvas canvas,
     Paint paint,
     Rect rect,
     Size size,
@@ -399,19 +490,11 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
       degToRad(endLine / 2) as double,
       false,
       paint,
-      onTapDown: (t) {
-        print('tap left --- ');
-        tapLeft?.call();
-      },
-      onTapUp: (t) {
-        print('onTapUp $t');
-        // tapLeft?.call();
-      },
     );
   }
 
   void _drawButtonRight(
-    TouchyCanvas canvas,
+    Canvas canvas,
     Paint paint,
     Rect rect,
     Size size,
@@ -428,10 +511,6 @@ class _SpeedIndicatorCustomPainter extends CustomPainter {
       degToRad(endLine / 2) as double,
       false,
       paint,
-      onTapDown: (t) {
-        print('tap right');
-        tapRight?.call();
-      },
     );
   }
 

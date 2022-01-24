@@ -38,6 +38,16 @@ class HomeView extends GetView<HomeController> {
                 Divider(
                   thickness: 1,
                 ),
+                ListTile(
+                  title: Text('Swtich'),
+                  trailing: Icon(Icons.navigate_next),
+                  onTap: () {
+                    Get.toNamed(Routes.MY_SWITCH);
+                  },
+                ),
+                Divider(
+                  thickness: 1,
+                ),
               ],
             ),
           ),

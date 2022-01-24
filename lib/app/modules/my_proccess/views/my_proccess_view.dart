@@ -54,7 +54,8 @@ class MyProccessView extends GetView<MyProccessController> {
                 child: SpeedIndicatorLine(
                   minSpeed: 0,
                   maxSpeed: 140,
-                  heightLine: 90,
+                  heightLine: 85,
+                  speedWidth: 350,
                   speed: controller.count.value,
                   animate: true,
                   inactiveColor: Colors.black12,
@@ -73,12 +74,16 @@ class MyProccessView extends GetView<MyProccessController> {
                   ),
                   duration: Duration(milliseconds: 200),
                   tapLeft: () {
-                    print('---------');
-                    controller.count.value = controller.count.value - 1;
+                    if (controller.count.value > 0) {
+                      controller.count.value = controller.count.value - 1;
+                    }
                   },
                   tapRight: () {
-                    print('++++++++++++++++++++++');
-                    controller.count.value = controller.count.value + 1;
+                    controller.isUserTouch = true;
+                    print(controller.isUserTouch);
+                    if (controller.count.value < 140) {
+                      controller.count.value = controller.count.value + 1;
+                    }
                   },
                 ),
               ),
