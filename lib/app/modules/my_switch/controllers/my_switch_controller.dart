@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 class MySwitchController extends GetxController {
   //TODO: Implement MySwitchController
 
-  final count = 0.obs;
+  RxBool valueSwitch = RxBool(true);
   @override
   void onInit() {
     super.onInit();
@@ -16,5 +16,4 @@ class MySwitchController extends GetxController {
 
   @override
   void onClose() {}
-  void increment() => count.value++;
 }

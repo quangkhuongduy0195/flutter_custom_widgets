@@ -148,7 +148,7 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
                 Container(
                   height: widget.heightLine * 0.75,
                   width: widget.speedWidth * 0.25,
-                  color: Colors.teal.withOpacity(0.5),
+                  color: Colors.transparent,
                   child: GestureDetector(
                     onTapDown: (i) {
                       // if (controller.count.value > 0) {
@@ -169,7 +169,7 @@ class SpeedIndicatorLineState extends State<SpeedIndicatorLine>
                 Container(
                   height: widget.heightLine * 0.75,
                   width: widget.speedWidth * 0.25,
-                  color: Colors.orange.withOpacity(0.5),
+                  color: Colors.transparent,
                   child: GestureDetector(
                     onTap: () {},
                     onTapDown: (i) {

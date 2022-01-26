@@ -7,6 +7,7 @@ abstract class Routes {
   static const MY_SLIDER = _Paths.MY_SLIDER;
   static const MY_PROCCESS = _Paths.MY_PROCCESS;
   static const MY_SWITCH = _Paths.MY_SWITCH;
+  static const MY_CIRCLE_COLOR = _Paths.MY_CIRCLE_COLOR;
 }
 
 abstract class _Paths {
@@ -15,4 +16,5 @@ abstract class _Paths {
   static const MY_SLIDER = '/my-slider';
   static const MY_PROCCESS = '/my-proccess';
   static const MY_SWITCH = '/my-switch';
+  static const MY_CIRCLE_COLOR = '/my-circle-color';
 }

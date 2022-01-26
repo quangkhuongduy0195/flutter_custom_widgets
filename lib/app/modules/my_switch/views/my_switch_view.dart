@@ -1,5 +1,5 @@
+import 'package:custom_widgets/app/widgets/custom_switch.dart';
 import 'package:flutter/material.dart';
-
 import 'package:get/get.dart';
 
 import '../controllers/my_switch_controller.dart';
@@ -13,9 +13,13 @@ class MySwitchView extends GetView<MySwitchController> {
         centerTitle: true,
       ),
       body: Center(
-        child: Text(
-          'MySwitchView is working',
-          style: TextStyle(fontSize: 20),
+        child: Obx(
+          () => CustomSwitch(
+            value: controller.valueSwitch.value,
+            onChanged: (bool value) {
+              controller.valueSwitch.value = value;
+            },
+          ),
         ),
       ),
     );

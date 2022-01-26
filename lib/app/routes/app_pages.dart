@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
+import '../modules/my_circle_color/bindings/my_circle_color_binding.dart';
+import '../modules/my_circle_color/views/my_circle_color_view.dart';
 import '../modules/my_proccess/bindings/my_proccess_binding.dart';
 import '../modules/my_proccess/views/my_proccess_view.dart';
 import '../modules/my_slider/bindings/my_slider_binding.dart';
@@ -36,6 +38,11 @@ class AppPages {
       name: _Paths.MY_SWITCH,
       page: () => MySwitchView(),
       binding: MySwitchBinding(),
+    ),
+    GetPage(
+      name: _Paths.MY_CIRCLE_COLOR,
+      page: () => MyCircleColorView(),
+      binding: MyCircleColorBinding(),
     ),
   ];
 }

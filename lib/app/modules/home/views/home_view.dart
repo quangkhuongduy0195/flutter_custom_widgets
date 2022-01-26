@@ -48,6 +48,16 @@ class HomeView extends GetView<HomeController> {
                 Divider(
                   thickness: 1,
                 ),
+                ListTile(
+                  title: Text('Color'),
+                  trailing: Icon(Icons.navigate_next),
+                  onTap: () {
+                    Get.toNamed(Routes.MY_CIRCLE_COLOR);
+                  },
+                ),
+                Divider(
+                  thickness: 1,
+                ),
               ],
             ),
           ),
